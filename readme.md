@@ -10,7 +10,11 @@ Install the package:
 npm install @mtillmann/file-ingest
 ```
 
-After creating an instance, you'll receive a custom event `file-ingest:files` on the target element with the files as `event.detail.files`. `event.detail.files` contains an array of files that passed the `accept`-option's MIME type check. Set the `includeRejectedFiles`-option to `true` to include rejected files in the event detail. If you set the `emitWhenEmpty`-option to `true`, the event will be emitted even when no matched files are present.
+After creating an instance, you'll receive a custom event `file-ingest:files` on the target element with the files as `event.detail.files`. 
+
+- `event.detail.files` contains an array of files that passed the `accept`-option's MIME type check. 
+- Set the `includeRejectedFiles`-option to `true` to include rejected files in `event.detail.rejected`. 
+- If you set the `emitWhenEmpty`-option to `true`, the event will be emitted even when no matched files are present.
 
 ### Bundler
 
