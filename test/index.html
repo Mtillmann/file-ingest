@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <script>
+        function addRow(key, name) {
+            const row = document.createElement('tr');
+            row.setAttribute('id', 'result-' + key);
+
+            const markCell = document.createElement('td');
+            markCell.textContent = '?';
+            row.appendChild(markCell);
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = name;
+            row.appendChild(nameCell);
+
+
+
+            document.querySelector('tbody').appendChild(row);
+        }
+
+    </script>
+
+    <script type="module">
+        import FileIngest from '../dist/index.js';
+
+
+
+
+        const tests = {
+            'uses drop': {
+                options: {
+                    drop: true,
+                    change: false,
+                    paste: false
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'uses paste': {
+                options: {
+                    drop: false,
+                    change: false,
+                    paste: true
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'uses change': {
+                options: {
+                    drop: false,
+                    change: true,
+                    paste: false
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'accepts any': {
+                options: {
+                    accept: '*/*'
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'accepts by type/*': {
+                options: {
+                    accept: 'image/*'
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'accepts by type/subtype': {
+                options: {
+                    accept: 'image/png'
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'rejects by type/*': {
+                options: {
+                    accept: 'text/*',
+                    emitWhenEmpty: true
+                },
+                condition: e => e.detail.files.length === 0
+            },
+            'rejects by type/subtype': {
+                options: {
+                    accept: 'text/markdown',
+                    emitWhenEmpty: true
+                },
+                condition: e => e.detail.files.length === 0
+            },
+            'accepts by multiple mime': {
+                options: {
+                    accept: 'text/markdown, image/png',
+                    emitWhenEmpty: true
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'includes rejected': {
+                options: {
+                    accept: 'image/jpeg',
+                    emitWhenEmpty: true,
+                    includeRejectedFiles: true
+                },
+                condition: e => e.detail.rejected.length === 1
+            },
+            'applies event prefix': {
+                options: {},
+                condition: e => e.detail.files.length === 1
+            },
+            'uses event target': {
+                options: {
+                    eventTarget: document.querySelector('table.table')
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'uses callback (2 checkmarks are correct)': {
+                options: {
+                    callback(detail) {
+                        if (detail.files.length === 1) {
+                            document.querySelector('#result-uses-callback td').textContent = '✅✅';
+                        }
+                    }
+                },
+                condition: e => e.detail.files.length === 1
+            },
+            'destroys (initial checkmark is correct)': {
+                options: {
+                    destroy: true,
+                    prepare: (instance) => {
+                        instance.destroy();
+                        document.querySelector('#result-destroys--initial-checkmark-is-correct- td').textContent = '✅';
+                    }
+                },
+                //if this runs the test failed
+                condition: e => e.detail.files.length === 255
+            }
+
+        };
+
+
+        for (const [name, { options, condition }] of Object.entries(tests)) {
+            const key = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            addRow(key, name);
+            const instance = new FileIngest({
+                ...options,
+                eventPrefix: key
+            });
+
+            if (options.prepare) {
+                options.prepare(instance);
+            }
+
+            (options.eventTarget || document.documentElement).addEventListener(`${key}:files`, (e) => {
+                const key = e.type.split(':').shift();
+                const row = document.getElementById('result-' + key);
+                row.querySelector('td').textContent = condition(e) ? '✅' : '❌';
+            });
+        }
+    </script>
+    <script src="../dist/index.umd.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            new FileIngest({
+                eventPrefix: 'umd'
+            })
+
+
+            addRow('umd', 'UMD build');
+
+            document.documentElement.addEventListener('umd:files', (e) => {
+                document.querySelector('#result-umd td').textContent = '✅';
+            });
+        })
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1>File Ingest Tests</h1>
+            </div>
+            <div class="col-6">
+                <div class="alert alert-success d-flex flex-column">
+                    
+                        <div class="flex-grow-1 alert alert-success">Drop PNG File here</div>
+                        <div class="flex-grow-1 alert alert-success">Paste PNG File here</div>
+                        <div class="flex-grow-1 alert alert-success"><label>
+                                Click here to select PNG File
+                                <input type="file" class="form-control form-control-sm">
+                            </label>
+                        </div>
+
+                    
+                </div>
+            </div>
+            <div class="col-6">
+                <table class="table table-sm">
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
